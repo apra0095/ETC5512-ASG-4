@@ -7,7 +7,12 @@ output:
     toc: false
 ---
 
-## **Downloading and Documenting Data Process**
+::: panel-tabset
+<!-- Task 1 Tab: Data and Documenting -->
+
+## Data and Documenting
+
+### **Downloading and Documenting Data Process**
 
 1.  **Research Question**\
     My primary question is: is there a measurable relationship between a country’s level of undernourishment and its students’ cognitive performance based on PISA score?. I chose this because Indonesia’s new free lunch program for student (kindergarten to high school level) has ignited various debate (both praise for its potential and worries about its cost), and as an Indonesian citizen I’m keen to see whether the data bear out the assumption that better nutrition drives better learning. To unpack this I’ll look at two sub-questions:
@@ -49,7 +54,32 @@ output:
 
     -   Any findings should be presented without stigmatizing any country or community based on their cognitive scores or nutrition levels.
 
-```{r}
+4.  **Data Acquisition and Processing Steps**
+    -   **FAO Undernourishment CSV:**
+
+        1.  Visit <https://data.worldbank.org/indicator/SN.ITK.DEFC.ZS>.
+
+        2.  Click “Download CSV”
+
+        3.  Save as `data/FAO Undernourishment Index.csv`.
+
+    -   **PISA Excel:**
+
+        1.  Go to <https://pisadataexplorer.oecd.org/ide/idepisa/>.
+
+        2.  Select the “Reading” and “Mathematics”, “Science” from the "subject" tab and select the relevant countries and years to benchmark
+
+        3.  Continue by clicking the "Grouping Variables" and select the student demographic. For this case, I select "all students" as the sample, not specific demographic profile
+
+        4.  Continue by clicking "build the report" and download the data and save as `data/PISA Score.xls` with sheets `science_score`, `math_score`, `reading_score`.
+
+    -   **Processing and Cleaning in R**
+
+<!-- -->
+
+1.  Load all the necessary function that will be used in the analysis
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
 library(readr)
 library(readxl)
 library(dplyr)
@@ -61,78 +91,216 @@ library(stringr)
 library(plotly)
 ```
 
-```{r}
-#| label: Read and Tidy PISA Math Data
+2.  Read and Tidy the PISA data
 
-pisa_math <- read_excel("data/PISA Score.xls", sheet = "math_score", skip=11) %>%
-  clean_names() %>%
-  fill(year_study) %>%
-filter(str_detect(year_study, "^[0-9]{4}$")) %>%
-  mutate(
-    year        = as.integer(year_study),
-    country     = str_remove(jurisdiction, " \\(\\d{4}\\)$"),
-    avg_math = as.numeric(average)
-  ) %>%
-  select(year, country, avg_math) %>%
-  
-  group_by(country, year) %>%
-  summarise(
-    avg_math = mean(avg_math, na.rm = TRUE),
-    .groups     = "drop"
-  ) %>%
-  
-  mutate(avg_math = na_if(avg_math, NaN))
-```
+    By default, the PISA data comes in `.xls` format and has multiple sheet in it called `sheet_1`, `sheet_2`, and `sheet_3` but I changed it manually to the related subject such as `math_score`, `science_score`, and `reading_score` to make it easier for processing in R.
 
-```{r}
-#| label: Read and Tidy PISA Reading Data
-pisa_reading <- read_excel("data/PISA Score.xls", sheet = "reading_score", skip=11) %>%
-  clean_names() %>%
-  fill(year_study) %>%
-filter(str_detect(year_study, "^[0-9]{4}$")) %>%
-  mutate(
-    year        = as.integer(year_study),
-    country     = str_remove(jurisdiction, " \\(\\d{4}\\)$"),
-    avg_reading = as.numeric(average)
-  ) %>%
-  select(year, country, avg_reading) %>%
-  
-  group_by(country, year) %>%
-  summarise(
-    avg_reading = mean(avg_reading, na.rm = TRUE),
-    .groups     = "drop"
-  ) %>%
-  
-  mutate(avg_reading = na_if(avg_reading, NaN))
+    First thing to do is read the data using `read_excel` and skip 11 rows that contains metadata. After that, to make all variables are uniform in lower cases, I used `clean_names` . by default, since the data is in excel format, the author of the dataset was using merge cells when wrote the `year_study` in excel, so when I read it with R, it only show 4 observation of `year_study` and the rest of the row was NA values. to automatically fill the year value into any blank cell before there is a different year value that already filled. The process is run repeatedly.
+
+    After that, I did restructuring the class of every variables and renamed it to make the analysis easier. Turns out there are still several variables that is not tidy yet. For example, there are several country name that has a suffix of year (e.g Albania (2015), Malaysia (2015), etc) that has a separate score value for that specific year. So I choose to integrate then into one similar row by removing the suffix using this `" \(\d{4}\)$"` syntax. All the process for tidying up the PISA data are the same for Math, Science and Reading data.
+
+    After done with the tidying up process, I continue to plot the data using a line chart plot because I want to see the trend overtime and compared it to other countries. I choose several countries in Southeast Asian such as Brunei Darussalam", "Cambodia", "Indonesia", "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", and "International Average (OECD) to get a comparison. Furthermore, for the finishing part, I use `plotly` function so the chart could look more interactive.
+
+    ```{r,echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+    #| label: Read and Tidy PISA Math Data
+    # Read and Tidy PISA Math Data
+
+    pisa_math <- read_excel("data/PISA Score.xls", sheet = "math_score", skip=11) %>%
+      clean_names() %>%
+      fill(year_study) %>%
+      mutate(
+        year        = as.integer(year_study),
+        country     = str_remove(jurisdiction, " \\(\\d{4}\\)$"),
+        avg_math = as.numeric(average)
+      ) %>%
+      select(year, country, avg_math) %>%
+      mutate(avg_math = na_if(avg_math, NaN))
+
+    ```
+
+    ```{r, echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+    #| label: Read and Tidy PISA Reading Data
+    # Read and Tidy PISA Reading Data
+
+    pisa_reading <- read_excel("data/PISA Score.xls", sheet = "reading_score", skip=11) %>%
+      clean_names() %>%
+      fill(year_study) %>%
+      mutate(
+        year        = as.integer(year_study),
+        country     = str_remove(jurisdiction, " \\(\\d{4}\\)$"),
+        avg_reading = as.numeric(average)
+      ) %>%
+      select(year, country, avg_reading) %>%
+      mutate(avg_reading = na_if(avg_reading, NaN))
 
 
-```
+    ```
 
-```{r}
-#| label: Read and Tidy PISA Science Data
-pisa_science <- read_excel("data/PISA Score.xls", sheet = "science_score", skip=11) %>%
-  clean_names() %>%
-  fill(year_study) %>%
-  
-filter(str_detect(year_study, "^[0-9]{4}$")) %>%
-  mutate(
-    year        = as.integer(year_study),
-    country     = str_remove(jurisdiction, " \\(\\d{4}\\)$"),
-    avg_science = as.numeric(average)
-  ) %>%
-  select(year, country, avg_science) %>%
-  
-  group_by(country, year) %>%
-  summarise(
-    avg_science = mean(avg_science, na.rm = TRUE),
-    .groups     = "drop"
-  ) %>%
-  
-  mutate(avg_science = na_if(avg_science, NaN))
-```
+    ```{r, echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+    #| label: Read and Tidy PISA Science Data
+    # Read and Tidy PISA Science Data
 
-```{r}
+    pisa_science <- read_excel("data/PISA Score.xls", sheet = "science_score", skip=11) %>%
+      clean_names() %>%
+      fill(year_study) %>%
+      mutate(
+        year        = as.integer(year_study),
+        country     = str_remove(jurisdiction, " \\(\\d{4}\\)$"),
+        avg_science = as.numeric(average)
+      ) %>%
+      select(year, country, avg_science) %>%
+      mutate(avg_science = na_if(avg_science, NaN))
+
+    ```
+
+    ```{r, echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+    #| label: PISA Science Plot
+    # PISA Science Plot
+
+    series <- c(
+      "Brunei Darussalam", "Cambodia",    "Indonesia", 
+      "Malaysia",         "Philippines", "Singapore", 
+      "Thailand",         "Viet Nam",    "International Average (OECD)"
+    )
+
+    p <- pisa_science %>%
+      filter(country %in% series) %>%
+      ggplot(aes(x = year, y = avg_science, color = country)) +
+        geom_line(size = 1) +
+        geom_point(size = 2) +
+        scale_x_continuous(
+          breaks = c(2009, 2012, 2015, 2018, 2022),
+          labels = c("2009", "2012", "2015", "2018", "2022")
+        ) +
+        labs(
+          title    = "PISA Science Scores (2009–2022)",
+          subtitle = "Southeast Asian Countries & OECD Average",
+          x        = "Assessment Year",
+          y        = "Average Science Score",
+          color    = NULL            
+        ) +
+        theme_minimal(base_size = 14) +
+        theme(
+          legend.position   = "bottom",
+          legend.text       = element_text(size = 10),
+          legend.key.width  = unit(1.5, "lines"),
+          axis.text.x       = element_text(hjust = 0.5),
+          plot.margin       = margin(5, 5, 40, 5)  # leave room for legend
+        )
+
+    ggplotly(p, tooltip = c("country","year","avg_science")) %>%
+      layout(
+        legend = list(
+          orientation = "v",      
+          x = 1.02,               
+          y = 1,                  
+          xanchor = "left",       
+          yanchor = "top"        
+        ),
+        margin = list(l = 60, r = 120, t = 80, b = 50)
+      ) %>%
+      config(displayModeBar = FALSE)
+
+    ```
+
+    ```{r, echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+    #| label: PISA Math Plot
+    # PISA Math Plot
+
+    m <- pisa_math %>%
+      filter(country %in% series) %>%
+      ggplot(aes(x = year, y = avg_math, color = country)) +
+        geom_line(size = 1) +
+        geom_point(size = 2) +
+        scale_x_continuous(
+          breaks = c(2009, 2012, 2015, 2018, 2022),
+          labels = c("2009", "2012", "2015", "2018", "2022")
+        ) +
+        labs(
+          title    = "PISA Math Scores (2009–2022)",
+          subtitle = "Southeast Asian Countries & OECD Average",
+          x        = "Assessment Year",
+          y        = "Average Science Score",
+          color    = NULL            
+        ) +
+        theme_minimal(base_size = 14) +
+        theme(
+          legend.position   = "bottom",
+          legend.text       = element_text(size = 10),
+          legend.key.width  = unit(1.5, "lines"),
+          axis.text.x       = element_text(hjust = 0.5),
+          plot.margin       = margin(5, 5, 40, 5)  
+        )
+
+
+    ggplotly(m, tooltip = c("country","year","avg_math")) %>%
+      layout(
+        legend = list(
+          orientation = "v",      
+          x = 1.02,               
+          y = 1,                  
+          xanchor = "left",      
+          yanchor = "top"         
+        ),
+        margin = list(l = 60, r = 120, t = 80, b = 50)
+      ) %>%
+      config(displayModeBar = FALSE)
+
+    ```
+
+    ```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+    #| label: PISA Reading Plot
+    # PISA Reading Plot
+
+    r <- pisa_reading %>%
+      filter(country %in% series) %>%
+      ggplot(aes(x = year, y = avg_reading, color = country)) +
+        geom_line(size = 1) +
+        geom_point(size = 2) +
+        scale_x_continuous(
+          breaks = c(2009, 2012, 2015, 2018, 2022),
+          labels = c("2009", "2012", "2015", "2018", "2022")
+        ) +
+        labs(
+          title    = "PISA Reading Scores (2009–2022)",
+          subtitle = "Southeast Asian Countries & OECD Average",
+          x        = "Assessment Year",
+          y        = "Average Science Score",
+          color    = NULL       
+        ) +
+        theme_minimal(base_size = 14) +
+        theme(
+          legend.position   = "bottom",
+          legend.text       = element_text(size = 10),
+          legend.key.width  = unit(1.5, "lines"),
+          axis.text.x       = element_text(hjust = 0.5),
+          plot.margin       = margin(5, 5, 40, 5) 
+        )
+
+    ggplotly(r, tooltip = c("country","year","avg_reading")) %>%
+      layout(
+        legend = list(
+          orientation = "v",      
+          x = 1.02,               
+          y = 1,                  
+          xanchor = "left",      
+          yanchor = "top"         
+        ),
+        margin = list(l = 60, r = 120, t = 80, b = 50)
+      ) %>%
+      config(displayModeBar = FALSE)
+
+    ```
+
+3.  Read and Tidy FAO data
+
+    For the FAO data, first we read the data using `read_csv` and skip 11 row that contains the metadata. I also used `clean_names` to make all the variables name in lower case. Furthermore, I used a `pivot_long` function to transform two previous variables of `undernourishment_pct` and `year` into two separate tidy columns. I also remove the `indicator_code` that is only showing the code for `indicator_name` which is all the same.
+
+    After done with the tidying up process, I continue to plot the data using a line chart plot because I want to see the trend overtime and compared it to other countries. I choose several countries in Southeast Asian such as Brunei Darussalam", "Cambodia", "Indonesia", "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", and "International Average (OECD) to get a comparison. Furthermore, for the finishing part, I use `plotly` function so the chart could look more interactive.
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
 #| label: Read FAO data
+# Read FAO Data
 
 fao_data <- read_csv("data/FAO Undernourishment Index.csv", skip=4) %>%
   clean_names()
@@ -149,141 +317,7 @@ fao_clean <- fao_data %>%
   select(-indicator_code)
 ```
 
-```{r}
-#| label: PISA Science Plot
-# Define the series to plot
-series <- c(
-  "Brunei Darussalam", "Cambodia",    "Indonesia", 
-  "Malaysia",         "Philippines", "Singapore", 
-  "Thailand",         "Viet Nam",    "International Average (OECD)"
-)
-
-p <- pisa_science %>%
-  filter(country %in% series) %>%
-  ggplot(aes(x = year, y = avg_science, color = country)) +
-    geom_line(size = 1) +
-    geom_point(size = 2) +
-    scale_x_continuous(
-      breaks = c(2009, 2012, 2015, 2018, 2022),
-      labels = c("2009", "2012", "2015", "2018", "2022")
-    ) +
-    labs(
-      title    = "PISA Science Scores (2009–2022)",
-      subtitle = "Southeast Asian Countries & OECD Average",
-      x        = "Assessment Year",
-      y        = "Average Science Score",
-      color    = NULL            
-    ) +
-    theme_minimal(base_size = 14) +
-    theme(
-      legend.position   = "bottom",
-      legend.text       = element_text(size = 10),
-      legend.key.width  = unit(1.5, "lines"),
-      axis.text.x       = element_text(hjust = 0.5),
-      plot.margin       = margin(5, 5, 40, 5)  # leave room for legend
-    )
-
-# Convert it to an interactive Plotly chart
-ggplotly(p, tooltip = c("country","year","avg_science")) %>%
-  layout(
-    legend = list(
-      orientation = "v",      
-      x = 1.02,               
-      y = 1,                  
-      xanchor = "left",       
-      yanchor = "top"        
-    ),
-    margin = list(l = 60, r = 120, t = 80, b = 50)
-  ) %>%
-  config(displayModeBar = FALSE)
-```
-
-```{r}
-#| label: PISA Math Plot
-
-m <- pisa_math %>%
-  filter(country %in% series) %>%
-  ggplot(aes(x = year, y = avg_math, color = country)) +
-    geom_line(size = 1) +
-    geom_point(size = 2) +
-    scale_x_continuous(
-      breaks = c(2009, 2012, 2015, 2018, 2022),
-      labels = c("2009", "2012", "2015", "2018", "2022")
-    ) +
-    labs(
-      title    = "PISA Math Scores (2009–2022)",
-      subtitle = "Southeast Asian Countries & OECD Average",
-      x        = "Assessment Year",
-      y        = "Average Science Score",
-      color    = NULL            
-    ) +
-    theme_minimal(base_size = 14) +
-    theme(
-      legend.position   = "bottom",
-      legend.text       = element_text(size = 10),
-      legend.key.width  = unit(1.5, "lines"),
-      axis.text.x       = element_text(hjust = 0.5),
-      plot.margin       = margin(5, 5, 40, 5)  
-    )
-
-# Convert it to an interactive Plotly chart
-ggplotly(m, tooltip = c("country","year","avg_math")) %>%
-  layout(
-    legend = list(
-      orientation = "v",      
-      x = 1.02,               
-      y = 1,                  
-      xanchor = "left",      
-      yanchor = "top"         
-    ),
-    margin = list(l = 60, r = 120, t = 80, b = 50)
-  ) %>%
-  config(displayModeBar = FALSE)
-```
-
-```{r}
-
-r <- pisa_reading %>%
-  filter(country %in% series) %>%
-  ggplot(aes(x = year, y = avg_reading, color = country)) +
-    geom_line(size = 1) +
-    geom_point(size = 2) +
-    scale_x_continuous(
-      breaks = c(2009, 2012, 2015, 2018, 2022),
-      labels = c("2009", "2012", "2015", "2018", "2022")
-    ) +
-    labs(
-      title    = "PISA Reading Scores (2009–2022)",
-      subtitle = "Southeast Asian Countries & OECD Average",
-      x        = "Assessment Year",
-      y        = "Average Science Score",
-      color    = NULL            # drop the “Country” title
-    ) +
-    theme_minimal(base_size = 14) +
-    theme(
-      legend.position   = "bottom",
-      legend.text       = element_text(size = 10),
-      legend.key.width  = unit(1.5, "lines"),
-      axis.text.x       = element_text(hjust = 0.5),
-      plot.margin       = margin(5, 5, 40, 5)  # leave room for legend
-    )
-
-# Convert it to an interactive Plotly chart
-ggplotly(r, tooltip = c("country","year","avg_reading")) %>%
-  layout(
-    legend = list(
-      orientation = "v",      
-      x = 1.02,               
-      y = 1,                  
-      xanchor = "left",      
-      yanchor = "top"         
-    ),
-    margin = list(l = 60, r = 120, t = 80, b = 50)
-  ) %>%
-  config(displayModeBar = FALSE)
-```
-
-```{r}
+```{r, echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
 #| label: Plot FAO Data
 
 series_fao <- c(
@@ -326,3 +360,35 @@ ggplotly(f, tooltip = c("country_name", "year", "undernourishment_pct")) %>%
   ) %>%
   config(displayModeBar = FALSE)
 ```
+
+<!-- Task 2 Tab: Writing your blogpost -->
+
+## Blog post
+
+### What's in this section
+
+Here is where you should write your blogpost! (Task 2)
+
+### Blogpost Structure
+
+There is no strict structure for you to follow. However, here is a skeleton structure you may find helpful.
+
+1.  Title (is set at the top of this document)
+2.  Motivation
+3.  Data
+4.  Analysis
+5.  Conclusions
+6.  References
+
+<!-- Task 3 Tab: Behind the Scenes -  -->
+
+## Behind the Scenes
+
+### What's in this section
+
+Here is where you should tell us about your reflection on your analysis (Task 3).
+
+Again, these are the details about **your** perspective and the gritty details behind the scenes of your analysis.
+:::
+
+## 
