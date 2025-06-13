@@ -1,0 +1,328 @@
+---
+title: "Full Tummy, Higher Cognitive Potential?"
+author: "Izzul Fattah Aji Pratama"
+output:
+  html_document:
+    theme: cosmo
+    toc: false
+---
+
+## **Downloading and Documenting Data Process**
+
+1.  **Research Question**\
+    My primary question is: is there a measurable relationship between a country’s level of undernourishment and its students’ cognitive performance based on PISA score?. I chose this because Indonesia’s new free lunch program for student (kindergarten to high school level) has ignited various debate (both praise for its potential and worries about its cost), and as an Indonesian citizen I’m keen to see whether the data bear out the assumption that better nutrition drives better learning. To unpack this I’ll look at two sub-questions:
+
+-   Does undernourishment correlate differently with PISA Science, Math, and Reading scores?
+-   How does Indonesia’s nutrition–PISA link compare to its Southeast Asian neighbors and the OECD average?
+
+2.  **Data Sources**
+
+-   FAO Undernourishment Inde**x** : provides an annual, country level estimate of the percentage of people whose dietary energy intake falls below minimum requirements.
+
+-   OECD PISA Scores (Science, Math, Reading): measured every three years for 15 year old student in participating countries
+
+    These datasets are ideal because they:
+
+    -   Cover the same countries and overlapping years (2009–2022).
+
+    -   Are publicly available and methodologically transparent.
+
+    -   Offer standard, cross-national measures of nutrition sufficiency and educational outcomes.
+
+3.  **Data Details**
+
+-   **Data Type:**
+
+    -   FAO Undernourishment Index: model-based estimate using national food balance sheets (administrative data) plus sample household surveys.
+
+    -   PISA: stratified, probability-based sample survey of 15-year-old students
+
+-   **Data Limitations:**
+
+    -   For PISA data, Because it relies on stratified samples of 15-year-old student, some countries fail to meet minimum participation thresholds or there are no survey on a specific year. Those missing or incomplete data points appear as NA and can bias cross-country comparisons
+
+    -   For FAO Undernourishment Index, the data is coming from modeled estimates. it only uses the average food supply and survey-based measures of intake variation on every households. If the underlying food or survey data are missing, delayed, or unreliable, those estimates can be unreliable and they can easily hide families who are truly going hungry.
+
+-   Data Ethics & Privacy
+
+    -   The data that being analyzed is publicly available under CC-BY 4.0 license and aggregate country level indicators. No individual or personally identifiable data is involved.
+
+    -   Any findings should be presented without stigmatizing any country or community based on their cognitive scores or nutrition levels.
+
+```{r}
+library(readr)
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(janitor)
+library(broom)
+library(stringr)
+library(plotly)
+```
+
+```{r}
+#| label: Read and Tidy PISA Math Data
+
+pisa_math <- read_excel("data/PISA Score.xls", sheet = "math_score", skip=11) %>%
+  clean_names() %>%
+  fill(year_study) %>%
+filter(str_detect(year_study, "^[0-9]{4}$")) %>%
+  mutate(
+    year        = as.integer(year_study),
+    country     = str_remove(jurisdiction, " \\(\\d{4}\\)$"),
+    avg_math = as.numeric(average)
+  ) %>%
+  select(year, country, avg_math) %>%
+  
+  group_by(country, year) %>%
+  summarise(
+    avg_math = mean(avg_math, na.rm = TRUE),
+    .groups     = "drop"
+  ) %>%
+  
+  mutate(avg_math = na_if(avg_math, NaN))
+```
+
+```{r}
+#| label: Read and Tidy PISA Reading Data
+pisa_reading <- read_excel("data/PISA Score.xls", sheet = "reading_score", skip=11) %>%
+  clean_names() %>%
+  fill(year_study) %>%
+filter(str_detect(year_study, "^[0-9]{4}$")) %>%
+  mutate(
+    year        = as.integer(year_study),
+    country     = str_remove(jurisdiction, " \\(\\d{4}\\)$"),
+    avg_reading = as.numeric(average)
+  ) %>%
+  select(year, country, avg_reading) %>%
+  
+  group_by(country, year) %>%
+  summarise(
+    avg_reading = mean(avg_reading, na.rm = TRUE),
+    .groups     = "drop"
+  ) %>%
+  
+  mutate(avg_reading = na_if(avg_reading, NaN))
+
+
+```
+
+```{r}
+#| label: Read and Tidy PISA Science Data
+pisa_science <- read_excel("data/PISA Score.xls", sheet = "science_score", skip=11) %>%
+  clean_names() %>%
+  fill(year_study) %>%
+  
+filter(str_detect(year_study, "^[0-9]{4}$")) %>%
+  mutate(
+    year        = as.integer(year_study),
+    country     = str_remove(jurisdiction, " \\(\\d{4}\\)$"),
+    avg_science = as.numeric(average)
+  ) %>%
+  select(year, country, avg_science) %>%
+  
+  group_by(country, year) %>%
+  summarise(
+    avg_science = mean(avg_science, na.rm = TRUE),
+    .groups     = "drop"
+  ) %>%
+  
+  mutate(avg_science = na_if(avg_science, NaN))
+```
+
+```{r}
+#| label: Read FAO data
+
+fao_data <- read_csv("data/FAO Undernourishment Index.csv", skip=4) %>%
+  clean_names()
+
+fao_clean <- fao_data %>%
+  pivot_longer(
+    cols          = starts_with("x"),     
+    names_to      = "year",
+    names_prefix  = "x",
+    values_to     = "undernourishment_pct",
+    names_transform = list(year = as.integer) 
+  ) %>%
+  filter(year >= 2009, year <= 2022) %>%
+  select(-indicator_code)
+```
+
+```{r}
+#| label: PISA Science Plot
+# Define the series to plot
+series <- c(
+  "Brunei Darussalam", "Cambodia",    "Indonesia", 
+  "Malaysia",         "Philippines", "Singapore", 
+  "Thailand",         "Viet Nam",    "International Average (OECD)"
+)
+
+p <- pisa_science %>%
+  filter(country %in% series) %>%
+  ggplot(aes(x = year, y = avg_science, color = country)) +
+    geom_line(size = 1) +
+    geom_point(size = 2) +
+    scale_x_continuous(
+      breaks = c(2009, 2012, 2015, 2018, 2022),
+      labels = c("2009", "2012", "2015", "2018", "2022")
+    ) +
+    labs(
+      title    = "PISA Science Scores (2009–2022)",
+      subtitle = "Southeast Asian Countries & OECD Average",
+      x        = "Assessment Year",
+      y        = "Average Science Score",
+      color    = NULL            
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      legend.position   = "bottom",
+      legend.text       = element_text(size = 10),
+      legend.key.width  = unit(1.5, "lines"),
+      axis.text.x       = element_text(hjust = 0.5),
+      plot.margin       = margin(5, 5, 40, 5)  # leave room for legend
+    )
+
+# Convert it to an interactive Plotly chart
+ggplotly(p, tooltip = c("country","year","avg_science")) %>%
+  layout(
+    legend = list(
+      orientation = "v",      
+      x = 1.02,               
+      y = 1,                  
+      xanchor = "left",       
+      yanchor = "top"        
+    ),
+    margin = list(l = 60, r = 120, t = 80, b = 50)
+  ) %>%
+  config(displayModeBar = FALSE)
+```
+
+```{r}
+#| label: PISA Math Plot
+
+m <- pisa_math %>%
+  filter(country %in% series) %>%
+  ggplot(aes(x = year, y = avg_math, color = country)) +
+    geom_line(size = 1) +
+    geom_point(size = 2) +
+    scale_x_continuous(
+      breaks = c(2009, 2012, 2015, 2018, 2022),
+      labels = c("2009", "2012", "2015", "2018", "2022")
+    ) +
+    labs(
+      title    = "PISA Math Scores (2009–2022)",
+      subtitle = "Southeast Asian Countries & OECD Average",
+      x        = "Assessment Year",
+      y        = "Average Science Score",
+      color    = NULL            
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      legend.position   = "bottom",
+      legend.text       = element_text(size = 10),
+      legend.key.width  = unit(1.5, "lines"),
+      axis.text.x       = element_text(hjust = 0.5),
+      plot.margin       = margin(5, 5, 40, 5)  
+    )
+
+# Convert it to an interactive Plotly chart
+ggplotly(m, tooltip = c("country","year","avg_math")) %>%
+  layout(
+    legend = list(
+      orientation = "v",      
+      x = 1.02,               
+      y = 1,                  
+      xanchor = "left",      
+      yanchor = "top"         
+    ),
+    margin = list(l = 60, r = 120, t = 80, b = 50)
+  ) %>%
+  config(displayModeBar = FALSE)
+```
+
+```{r}
+
+r <- pisa_reading %>%
+  filter(country %in% series) %>%
+  ggplot(aes(x = year, y = avg_reading, color = country)) +
+    geom_line(size = 1) +
+    geom_point(size = 2) +
+    scale_x_continuous(
+      breaks = c(2009, 2012, 2015, 2018, 2022),
+      labels = c("2009", "2012", "2015", "2018", "2022")
+    ) +
+    labs(
+      title    = "PISA Reading Scores (2009–2022)",
+      subtitle = "Southeast Asian Countries & OECD Average",
+      x        = "Assessment Year",
+      y        = "Average Science Score",
+      color    = NULL            # drop the “Country” title
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      legend.position   = "bottom",
+      legend.text       = element_text(size = 10),
+      legend.key.width  = unit(1.5, "lines"),
+      axis.text.x       = element_text(hjust = 0.5),
+      plot.margin       = margin(5, 5, 40, 5)  # leave room for legend
+    )
+
+# Convert it to an interactive Plotly chart
+ggplotly(r, tooltip = c("country","year","avg_reading")) %>%
+  layout(
+    legend = list(
+      orientation = "v",      
+      x = 1.02,               
+      y = 1,                  
+      xanchor = "left",      
+      yanchor = "top"         
+    ),
+    margin = list(l = 60, r = 120, t = 80, b = 50)
+  ) %>%
+  config(displayModeBar = FALSE)
+```
+
+```{r}
+#| label: Plot FAO Data
+
+series_fao <- c(
+  "Brunei Darussalam", "Cambodia",    "Indonesia", 
+  "Malaysia",         "Philippines", "Singapore", 
+  "Thailand",         "Viet Nam",    "OECD members")
+
+f <- fao_clean %>%
+  filter(country_name %in% series) %>%
+  ggplot(aes(x = year, y = undernourishment_pct, color = country_name)) +
+    geom_line(size = 1) +
+    geom_point(size = 2) +
+    scale_x_continuous(
+      breaks = c(2009, 2012, 2015, 2018, 2022)
+    ) +
+    labs(
+      title    = "FAO Undernourishment Index (2009–2022)",
+      subtitle = "Southeast Asian Countries & OECD Average",
+      x        = "Assessment Year",
+      y        = "Prevalence of Undernourishment (%)",
+      color    = NULL
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      axis.text.x     = element_text(hjust = 0.5),
+      axis.title.x    = element_text(margin = margin(t = 15)),
+      plot.margin     = margin(5, 5, 5, 5)
+    )
+
+ggplotly(f, tooltip = c("country_name", "year", "undernourishment_pct")) %>%
+  layout(
+    legend = list(
+      orientation = "v",
+      x           = 1.02,
+      y           = 1,
+      xanchor     = "left",
+      yanchor     = "top"
+    ),
+    margin = list(l = 60, r = 120, t = 80, b = 50)
+  ) %>%
+  config(displayModeBar = FALSE)
+```
