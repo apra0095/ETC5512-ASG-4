@@ -1,5 +1,4 @@
 ---
-≠---
 title: "Full Tummy, Higher Cognitive Potential?"
 author: "Izzul Fattah Aji Pratama"
 output:
@@ -79,13 +78,9 @@ output:
 1.  Load all the necessary function that will be used in the analysis
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
-library(readr)
 library(readxl)
-library(dplyr)
-library(tidyr)
-library(ggplot2)
+library(tidyverse)
 library(janitor)
-library(broom)
 library(stringr)
 library(plotly)
 ```
@@ -118,7 +113,7 @@ library(plotly)
         avg_math = mean(avg_math, na.rm = TRUE),
         .groups  = "drop"
       ) %>%
-      filter(!is.na(avg_math))    
+      filter(!is.na(avg_math)) %>%   
       mutate(avg_math = na_if(avg_math, NaN))
 
     ```
@@ -141,7 +136,7 @@ library(plotly)
         avg_reading = mean(avg_reading, na.rm = TRUE),
         .groups  = "drop"
       ) %>%
-      filter(!is.na(avg_reading))    
+      filter(!is.na(avg_reading)) %>%   
       mutate(avg_reading = na_if(avg_reading, NaN))
 
 
@@ -165,7 +160,7 @@ library(plotly)
         avg_science = mean(avg_science, na.rm = TRUE),
         .groups  = "drop"
       ) %>%
-      filter(!is.na(avg_science))    
+      filter(!is.na(avg_science)) %>%    
       mutate(avg_science = na_if(avg_science, NaN))
 
     ```
@@ -202,7 +197,7 @@ library(plotly)
           legend.text       = element_text(size = 10),
           legend.key.width  = unit(1.5, "lines"),
           axis.text.x       = element_text(hjust = 0.5),
-          plot.margin       = margin(5, 5, 40, 5)  # leave room for legend
+          plot.margin       = margin(5, 5, 40, 5) 
         )
 
     ggplotly(p, tooltip = c("country","year","avg_science")) %>%
@@ -397,9 +392,7 @@ To explore this, I combined two public datasets:
 
 ### Analysis
 
-Before we dive into test scores, let’s check out Indonesia’s nutrition story. Back in 2009, Indonesia topped our Southeast Asia undernourishment chart, more people were missing their minimum calorie needs than anywhere else in the region. Over the next decade things got better, undernourishment steadily fell, hitting its low point around 2019. But then, starting in 2020, the trend reversed. More Indonesians slipped back into undernourishment, putting us again at the bottom of the regional rankings by 2022. You might think it caused by COVID-19 economic shocks, but our neighbors didn’t see the same setback. That makes you wonder if there’s more going on here than just a pandemic bump. But we wont criticize about government policy during those days :), let’s turn to the real question, how does all this tie into student performance on PISA?
-
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
 #| label: Plot FAO Data
 
@@ -442,15 +435,194 @@ ggplotly(f, tooltip = c("country_name", "year", "undernourishment_pct")) %>%
     margin = list(l = 60, r = 120, t = 80, b = 50)
   ) %>%
   config(displayModeBar = FALSE)
+
+```
+
+Before we dive into test scores, let’s check out Indonesia’s nutrition story. Back in 2009, Indonesia topped our Southeast Asia undernourishment chart, more people were missing their minimum calorie needs than anywhere else in the region. Over the next decade things got better, undernourishment steadily fell, hitting its low point around 2019. But then, starting in 2020, the trend reversed. More Indonesians slipped back into undernourishment, putting us again at the bottom of the regional rankings by 2022. You might think it caused by COVID-19 economic shocks, but our neighbors didn’t see the same setback. That makes you wonder if there’s more going on here than just a pandemic bump. But we wont criticize about government policy during those days :), let’s turn to the real question, how does all this tie into student performance on PISA?
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#| label: PISA Science Plot-Blog
+# PISA Science Plot
+
+series <- c(
+  "Brunei Darussalam", "Cambodia",    "Indonesia", 
+  "Malaysia",         "Philippines", "Singapore", 
+  "Thailand",         "Viet Nam",    "International Average (OECD)"
+)
+
+p <- pisa_science %>%
+  filter(country %in% series) %>%
+  ggplot(aes(x = year, y = avg_science, color = country)) +
+    geom_line(size = 1) +
+    geom_point(size = 2) +
+    scale_x_continuous(
+      breaks = c(2009, 2012, 2015, 2018, 2022),
+      labels = c("2009", "2012", "2015", "2018", "2022")
+    ) +
+    labs(
+      title    = "PISA Science Scores (2009–2022)",
+      subtitle = "Southeast Asian Countries & OECD Average",
+      x        = "Assessment Year",
+      y        = "Average Science Score",
+      color    = NULL            
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      legend.position   = "bottom",
+      legend.text       = element_text(size = 10),
+      legend.key.width  = unit(1.5, "lines"),
+      axis.text.x       = element_text(hjust = 0.5),
+      plot.margin       = margin(5, 5, 40, 5) 
+    )
+
+ggplotly(p, tooltip = c("country","year","avg_science")) %>%
+  layout(
+    legend = list(
+      orientation = "v",      
+      x = 1.02,               
+      y = 1,                  
+      xanchor = "left",       
+      yanchor = "top"        
+    ),
+    margin = list(l = 60, r = 120, t = 80, b = 50)
+  ) %>%
+  config(displayModeBar = FALSE)
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#| label: PISA Math Plot-Blog
+# PISA Math Plot
+
+m <- pisa_math %>%
+  filter(country %in% series) %>%
+  ggplot(aes(x = year, y = avg_math, color = country)) +
+    geom_line(size = 1) +
+    geom_point(size = 2) +
+    scale_x_continuous(
+      breaks = c(2009, 2012, 2015, 2018, 2022),
+      labels = c("2009", "2012", "2015", "2018", "2022")
+    ) +
+    labs(
+      title    = "PISA Math Scores (2009–2022)",
+      subtitle = "Southeast Asian Countries & OECD Average",
+      x        = "Assessment Year",
+      y        = "Average Science Score",
+      color    = NULL            
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      legend.position   = "bottom",
+      legend.text       = element_text(size = 10),
+      legend.key.width  = unit(1.5, "lines"),
+      axis.text.x       = element_text(hjust = 0.5),
+      plot.margin       = margin(5, 5, 40, 5)  
+    )
+
+
+ggplotly(m, tooltip = c("country","year","avg_math")) %>%
+  layout(
+    legend = list(
+      orientation = "v",      
+      x = 1.02,               
+      y = 1,                  
+      xanchor = "left",      
+      yanchor = "top"         
+    ),
+    margin = list(l = 60, r = 120, t = 80, b = 50)
+  ) %>%
+  config(displayModeBar = FALSE)
+
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#| label: PISA Reading Plot-Blog
+# PISA Reading Plot
+
+r <- pisa_reading %>%
+  filter(country %in% series) %>%
+  ggplot(aes(x = year, y = avg_reading, color = country)) +
+    geom_line(size = 1) +
+    geom_point(size = 2) +
+    scale_x_continuous(
+      breaks = c(2009, 2012, 2015, 2018, 2022),
+      labels = c("2009", "2012", "2015", "2018", "2022")
+    ) +
+    labs(
+      title    = "PISA Reading Scores (2009–2022)",
+      subtitle = "Southeast Asian Countries & OECD Average",
+      x        = "Assessment Year",
+      y        = "Average Science Score",
+      color    = NULL       
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      legend.position   = "bottom",
+      legend.text       = element_text(size = 10),
+      legend.key.width  = unit(1.5, "lines"),
+      axis.text.x       = element_text(hjust = 0.5),
+      plot.margin       = margin(5, 5, 40, 5) 
+    )
+
+ggplotly(r, tooltip = c("country","year","avg_reading")) %>%
+  layout(
+    legend = list(
+      orientation = "v",      
+      x = 1.02,               
+      y = 1,                  
+      xanchor = "left",      
+      yanchor = "top"         
+    ),
+    margin = list(l = 60, r = 120, t = 80, b = 50)
+  ) %>%
+  config(displayModeBar = FALSE)
+
 ```
 
 And voila! when we looked over to PISA, the picture isn’t much brighter. In 2022, Indonesia sits third from the bottom across Reading, Math, and Science, and the deepest decline since 2009 has come in Reading. Meanwhile our neighbors tell a different story. Singapore, for example, has climbed steadily to the top of the Southeast Asian rankings in every round of PISA in all aspects.
 
-So, does better nutrition translate into higher test scores? If you plot undernourishment against PISA over time, there’s no simple one to one relationship. Some countries with very low hunger rates aren’t necessarily PISA standouts, and vice versa, happened both in the Southeast Asian region or even if we compared to the International average. However that doesn’t mean providing nutritious meal is not important, but in the context of boosting academic performance, nutrition is not a single factor. It require a more holistic strategy such as investing in teacher training, upgrading school facilities, modernizing the curriculum, and supporting learning outside the classroom, too.
+So, does better nutrition translate into higher test scores? If you plot undernourishment against PISA over time, there’s no simple one to one relationship. Some countries with very low hunger rates aren’t necessarily PISA standouts, and vice-versa, happened both in the Southeast Asian region or even if we compared to the International average. However that doesn’t mean providing nutritious meal is not important, but in the context of boosting academic performance, nutrition is not a single factor. It require a more holistic strategy such as investing in teacher training, upgrading school facilities, modernizing the curriculum, and supporting learning outside the classroom, too.
 
 ### Summary
 
-I set out to see whether national undernourishment levels really have a direct correlation with student PISA scores and the short answer is: **weak correlation**. Using FAO’s undernourishment index and PISA Science, Math, and Reading results from 2009–2022, I find that, on average, countries with fewer undernourished people tend to score higher, but the pattern isn’t uniform across nations. Indonesia, for example, drove down hunger through 2019 yet saw no PISA gains especially in Reading. While neighbors in the region or even the average of international countries that could suppress the undernourished index doesn't necessarily has an increased on its score. In other words, better nutrition appears linked to stronger cognitive performance at a high level, but it’s far from a direct one to one relationship, meaning that alongside free school meals, comprehensive strategy in teaching quality, facilities, and curricullum are essential to truly boost learning.
+I set out to see whether national undernourishment levels really have a direct correlation with student PISA scores and the short answer is: **weak correlation**. Using FAO’s undernourishment index and PISA Science, Math, and Reading results from 2009–2022, I find that, on average, countries with fewer undernourished people tend to score higher, but the pattern isn’t uniform across nations. Indonesia, for example, drove down hunger through 2019 yet saw no PISA gains especially in Reading. While neighbors in the region or even the average of international countries that could suppress the undernourished index doesn't necessarily has an increased on its score. In other words, better nutrition appears linked to stronger cognitive performance at a high level, but it’s far from a direct one to one relationship, meaning that alongside free school meals, comprehensive strategy in teaching quality, facilities, and curriculum are essential to truly boost learning.
+
+### References
+
+World Bank. (2025). *Prevalence of moderate or severe food insecurity (% of population) (Indicator SN.ITK.DEFC.ZS)*\[Data set\]. Retrieved June 13, 2025, from <https://data.worldbank.org/indicator/SN.ITK.DEFC.ZS>
+
+Organisation for Economic Co-operation and Development. (n.d.). *PISA Data Explorer* \[Data set\]. Retrieved June 15, 2025, from <https://pisadataexplorer.oecd.org/ide/idepisa/>
+
+```         
+Wickham H, Averick M, Bryan J, Chang W, McGowan LD, François R, Grolemund G, Hayes A, Henry L, Hester J, Kuhn M,
+  Pedersen TL, Miller E, Bache SM, Müller K, Ooms J, Robinson D, Seidel DP, Spinu V, Takahashi K, Vaughan D, Wilke
+  C, Woo K, Yutani H (2019). “Welcome to the tidyverse.” _Journal of Open Source Software_, *4*(43), 1686.
+  doi:10.21105/joss.01686 <https://doi.org/10.21105/joss.01686>.
+```
+
+```         
+Wickham H, Bryan J (2025). _readxl: Read Excel Files_. doi:10.32614/CRAN.package.readxl
+  <https://doi.org/10.32614/CRAN.package.readxl>, R package version 1.4.5,
+  <https://CRAN.R-project.org/package=readxl>.
+```
+
+```         
+Wickham H (2023). _stringr: Simple, Consistent Wrappers for Common String Operations_.
+  doi:10.32614/CRAN.package.stringr <https://doi.org/10.32614/CRAN.package.stringr>, R package version 1.5.1,
+  <https://CRAN.R-project.org/package=stringr>.
+```
+
+```         
+Firke S (2024). _janitor: Simple Tools for Examining and Cleaning Dirty Data_. doi:10.32614/CRAN.package.janitor
+  <https://doi.org/10.32614/CRAN.package.janitor>, R package version 2.2.1,
+  <https://CRAN.R-project.org/package=janitor>.
+```
+
+```         
+C. Sievert. Interactive Web-Based Data Visualization with R, plotly, and shiny. Chapman and Hall/CRC Florida,
+  2020.
+```
 
 <!-- Task 3 Tab: Behind the Scenes -  -->
 
