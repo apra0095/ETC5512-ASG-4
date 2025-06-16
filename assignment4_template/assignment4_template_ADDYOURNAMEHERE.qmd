@@ -628,11 +628,21 @@ C. Sievert. Interactive Web-Based Data Visualization with R, plotly, and shiny. 
 
 ## Behind the Scenes
 
-### What's in this section
+***Q1. Tell us about parts of your data processing or analysis that weren’t “sexy” and wouldn’t typically be included in a blog post. (e.g. Was their any data drudgery or time intensive wrangling? Were there any repetitive tasks or manual tasks? If it was easy, describe what made it easy?)***
 
-Here is where you should tell us about your reflection on your analysis (Task 3).
+Getting the FAO and PISA files themselves was quite smooth I would say, they come with good documentation and line up nicely by country and year. The headache started when I loaded the PISA Excel sheet: years were hidden in merged cells, some country names had “(2015)” or any random year tacked on, and everything read in as NAs until I spent time skipping rows, filling down the year column, stripping out those extra tags, and converting text to numbers. It wasn’t fun, but without that cleanup I couldn’t move forward.
 
-Again, these are the details about **your** perspective and the gritty details behind the scenes of your analysis.
+***Q2. Were there any challenges that you faced in conducting this analysis. These may take the form of data limitations or coding challenges? (e.g. Was there anything in your analysis that you were not anticipating when you started? Did you have to change your intended scope? Did you need to master a new skill? Were there any problems you were proud of solving?)***
+
+On the data side, I faced a challenge when I saw FAO didn’t list Singapore, even though Singapore is a PISA superstar. So I had to leave them out of that comparison and start comparing with other countries. On the coding side, tweaking the visuals took way longer than I expected. finding the right font sizes, margins, axis breaks, colors, and legend spots was all trial and error until it looked clear.
+
+***Q3. Tell us about any imperfect parts of your work and how you would like to expand or improve this analysis in future? Be clear about any limitations or aspects of your analysis that fell beyond scope.***
+
+I’m not totally happy with how the three PISA charts stack up. They take too much vertical space, and my gridExtra attempt to make a side by side chart also failed. Next time maybe I would try a faceted or patchwork layout to keep things compact and I would also like to bring another data related to education such as government spending to help explain the pattern more clearly.
+
+***Q4. Also submit 4 earlier versions of your assignment to show your iterative process. These should be your messy versions and include exploratory code. We recommend you save these files as you progress through your assignment.***
+
+here is my step by step process when working on this assignment :
 :::
 
 ## 
