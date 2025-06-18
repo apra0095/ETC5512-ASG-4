@@ -1,0 +1,6 @@
+﻿Field short name,Field Name,Description,Variable Type,Specific Information
+country_name,country name,name of country,categorical,
+country_code,country code,code of the country,cetogorical,
+indicator_name,indicator name,indicator description of the data,categorical,
+undernourishment_pct,undernourishment percentage,percentage of undernourishment,numerical,value in % of population
+year,year,calendar year,numerical,

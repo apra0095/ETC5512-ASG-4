@@ -1,0 +1,6 @@
+﻿Field short name,Field Name,Description,Variable Type,Specific Information
+country,country,country name,categorical,
+year,year,calendar year,numerical,
+avg_math,average math,average math score,numerical,
+avg_science,average science,average science score,numerical,
+avg_reading,average reading,average reading score,numerical,

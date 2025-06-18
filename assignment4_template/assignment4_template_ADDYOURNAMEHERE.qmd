@@ -15,8 +15,11 @@ output:
 1.  **Research Question**\
     My primary question is: is there a measurable relationship between a country’s level of undernourishment and its students’ cognitive performance based on PISA score?. I chose this because Indonesia’s new free lunch program for student (kindergarten to high school level) has ignited various debate (both praise for its potential and worries about its cost), and as an Indonesian citizen I’m keen to see whether the data bear out the assumption that better nutrition drives better learning. To unpack this I’ll look at two sub-questions:
 
--   Does undernourishment correlate differently with PISA Science, Math, and Reading scores?
--   How does Indonesia’s nutrition–PISA link compare to its Southeast Asian neighbors and the OECD average?
+    -   Does undernourishment correlate differently with PISA Science, Math, and Reading scores?
+
+    -   How does Indonesia’s nutrition–PISA link compare to its Southeast Asian neighbors and the OECD average?
+
+<!-- -->
 
 2.  **Data Sources**
 
@@ -46,11 +49,15 @@ output:
 
     -   For FAO Undernourishment Index, the data is coming from modeled estimates. it only uses the average food supply and survey-based measures of intake variation on every households. If the underlying food or survey data are missing, delayed, or unreliable, those estimates can be unreliable and they can easily hide families who are truly going hungry.
 
--   Data Ethics & Privacy
+-   **Data Ethics & Privacy**
 
     -   The data that being analyzed is publicly available under CC-BY 4.0 license and aggregate country level indicators. No individual or personally identifiable data is involved.
 
     -   Any findings should be presented without stigmatizing any country or community based on their cognitive scores or nutrition levels.
+
+-   **README and Data Dictionary**
+
+    -   The final cleaned dataset equipped with README and Data Dictionary (inside data folder)
 
 4.  **Data Acquisition and Processing Steps**
     -   **FAO Undernourishment CSV:**
@@ -83,6 +90,7 @@ library(tidyverse)
 library(janitor)
 library(stringr)
 library(plotly)
+library(readr)
 ```
 
 2.  Read and Tidy the PISA data
@@ -93,7 +101,7 @@ library(plotly)
 
     After that, I did restructuring the class of every variables and renamed it to make the analysis easier. Turns out there are still several variables that is not tidy yet. For example, there are several country name that has a suffix of year (e.g Albania (2015), Malaysia (2015), etc) that has a separate score value for that specific year. So I choose to integrate then into one similar row by removing the suffix using this `" \(\d{4}\)$"` syntax. All the process for tidying up the PISA data are the same for Math, Science and Reading data.
 
-    After done with the tidying up process, I continue to plot the data using a line chart plot because I want to see the trend overtime and compared it to other countries. I choose several countries in Southeast Asian such as Brunei Darussalam", "Cambodia", "Indonesia", "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", and "International Average (OECD) to get a comparison. Furthermore, for the finishing part, I use `plotly` function so the chart could look more interactive.
+    After done with the tidying up process, I continue to plot the data using a line chart plot because I want to see the trend overtime and compared it to other countries. I choose several countries in Southeast Asian such as "Brunei Darussalam", "Cambodia", "Indonesia", "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", and "International Average (OECD) to get a comparison. Furthermore, for the finishing part, I use `plotly` function so the chart could look more interactive.
 
     ```{r,echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
     #| label: Read and Tidy PISA Math Data
@@ -301,6 +309,14 @@ library(plotly)
         margin = list(l = 60, r = 120, t = 80, b = 50)
       ) %>%
       config(displayModeBar = FALSE)
+
+    ```
+
+    ```{r}
+    write_csv (pisa_math, "data/pisa_math_data.csv")
+    write_csv (pisa_reading, "data/pisa_reading_data.csv")
+    write_csv (pisa_science, "data/pisa_science_data.csv")
+    write_csv (fao_clean, "data/fao_data.csv")
 
     ```
 
@@ -643,6 +659,12 @@ I’m not totally happy with how the three PISA charts stack up. They take too m
 ***Q4. Also submit 4 earlier versions of your assignment to show your iterative process. These should be your messy versions and include exploratory code. We recommend you save these files as you progress through your assignment.***
 
 here is my step by step process when working on this assignment :
+
+<https://github.com/apra0095/ETC5512-ASG-4.git>
+
+### AI Acknowledgement
+
+I acknowledge that there are AI support in this assignment with the following [prompt](https://chatgpt.com/share/6852aa84-b330-8003-8f4f-d5f286ee1249)
 :::
 
 ## 
