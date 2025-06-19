@@ -57,7 +57,7 @@ output:
 
 -   **README and Data Dictionary**
 
-    -   The final cleaned dataset equipped with README and Data Dictionary (inside data folder)
+    -   The final cleaned dataset (`pisa_math`, `pisa_science`, `pisa_reading`, and `fao_data)` equipped with README and Data Dictionary (inside data folder)
 
 4.  **Data Acquisition and Processing Steps**
     -   **FAO Undernourishment CSV:**
@@ -95,9 +95,7 @@ library(readr)
 
 2.  Read and Tidy the PISA data
 
-    By default, the PISA data comes in `.xls` format and has multiple sheet in it called `sheet_1`, `sheet_2`, and `sheet_3` but I changed it manually to the related subject such as `math_score`, `science_score`, and `reading_score` to make it easier for processing in R.
-
-    First thing to do is read the data using `read_excel` and skip 11 rows that contains metadata. After that, to make all variables are uniform in lower cases, I used `clean_names` . by default, since the data is in excel format, the author of the dataset was using merge cells when wrote the `year_study` in excel, so when I read it with R, it only show 4 observation of `year_study` and the rest of the row was NA values. to automatically fill the year value into any blank cell before there is a different year value that already filled. The process is run repeatedly.
+    By default, the PISA data comes in `.xls` format and has multiple sheet in it for every test score. First thing to do is read the data using `read_excel` and skip 11 rows that contains metadata. After that, to make all variables are uniform in lower cases, I used `clean_names` . by default, since the data is in excel format, the author of the dataset was using merge cells when wrote the `year_study` in excel, so when I read it with R, it only show 4 observation of `year_study` and the rest of the row was NA values. to automatically fill the year value into any blank cell before there is a different year value that already filled. The process is run repeatedly.
 
     After that, I did restructuring the class of every variables and renamed it to make the analysis easier. Turns out there are still several variables that is not tidy yet. For example, there are several country name that has a suffix of year (e.g Albania (2015), Malaysia (2015), etc) that has a separate score value for that specific year. So I choose to integrate then into one similar row by removing the suffix using this `" \(\d{4}\)$"` syntax. All the process for tidying up the PISA data are the same for Math, Science and Reading data.
 
@@ -384,6 +382,7 @@ ggplotly(f, tooltip = c("country_name", "year", "undernourishment_pct")) %>%
 
 ```{r}
 #| label: Write Cleaned Data
+# Write Cleaned Data
 write_csv (pisa_math, "data/pisa_math_data.csv")
 write_csv (pisa_reading, "data/pisa_reading_data.csv")
 write_csv (pisa_science, "data/pisa_science_data.csv")
@@ -646,7 +645,7 @@ C. Sievert. Interactive Web-Based Data Visualization with R, plotly, and shiny. 
 
 ***Q1. Tell us about parts of your data processing or analysis that weren’t “sexy” and wouldn’t typically be included in a blog post. (e.g. Was their any data drudgery or time intensive wrangling? Were there any repetitive tasks or manual tasks? If it was easy, describe what made it easy?)***
 
-Getting the FAO and PISA files themselves was quite smooth I would say, they come with good documentation and line up nicely by country and year. The headache started when I loaded the PISA Excel sheet: years were hidden in merged cells, some country names had “(2015)” or any random year tacked on, and everything read in as NAs until I spent time skipping rows, filling down the year column, stripping out those extra tags, and converting text to numbers. It wasn’t fun, but without that cleanup I couldn’t move forward.
+Getting the FAO and PISA files themselves was quite smooth I would say, they come with good documentation and line up nicely by country and year. The headache started when I loaded the PISA Excel sheet. Years were hidden in merged cells, some country names had “(2015)” or any random year tacked on, and everything read in as NA until I spent time skipping rows, filling down the year column, stripping out those extra tags, and converting text to numbers. It wasn’t fun, but without that cleanup I couldn’t move forward.
 
 ***Q2. Were there any challenges that you faced in conducting this analysis. These may take the form of data limitations or coding challenges? (e.g. Was there anything in your analysis that you were not anticipating when you started? Did you have to change your intended scope? Did you need to master a new skill? Were there any problems you were proud of solving?)***
 
